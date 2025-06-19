@@ -32,4 +32,6 @@ public class RegisterResponse {
     private LocalDateTime registrationDate;
 
     private Boolean profileActive;
+
+    private String accessToken;
 }

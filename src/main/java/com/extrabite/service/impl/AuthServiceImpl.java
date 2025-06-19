@@ -32,24 +32,18 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public RegisterResponse registerNewUser(RegisterRequest request) {
-
-        // Normalize the email to lower case and trim extra spaces
         String normalizedEmail = request.getEmail().trim().toLowerCase();
 
-        // Check if a user with this email already exists
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new RuntimeException("Email already in use");
         }
 
-        // Prevent users from registering as ADMIN or VOLUNTEER through public API
         if (request.getRole() == Role.ADMIN || request.getRole() == Role.VOLUNTEER) {
             throw new RuntimeException("Invalid role for public registration.");
         }
 
-        // Encode password using BCrypt
         String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        // Create and save user
         User user = User.builder()
                 .fullName(request.getFullName())
                 .email(normalizedEmail)
@@ -63,7 +57,10 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Return successful registration response
+        // Generate token using JwtUtil
+        String token = jwtUtil.generateToken(savedUser);
+
+        // Return token with registration response
         return RegisterResponse.builder()
                 .id(savedUser.getId())
                 .fullName(savedUser.getFullName())
@@ -71,7 +68,8 @@ public class AuthServiceImpl implements AuthService {
                 .contactNumber(savedUser.getContactNumber())
                 .location(savedUser.getLocation())
                 .role(savedUser.getRole())
-                .message("Registration successful")
+                .accessToken(token)
+                .message("Registration successful and logged in")
                 .build();
     }
 
@@ -95,13 +93,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // If valid, generate JWT token
-        String token = jwtUtil.generateToken(
-                user.getEmail()
-        );
+        String token = jwtUtil.generateToken(user);
 
-        System.out.println("Looking up email: " + request.getEmail());
-        System.out.println("User in DB: " + user.getEmail());
-        System.out.println("Password matches: " + passwordEncoder.matches(request.getPassword(), user.getPassword()));
+        //  System.out.println("Looking up email: " + request.getEmail());
+        //  System.out.println("User in DB: " + user.getEmail());
+        //  System.out.println("Password matches: " + passwordEncoder.matches(request.getPassword(), user.getPassword()));
         // Return token and user info in response
         return LoginResponse.builder()
                 .accessToken(token)

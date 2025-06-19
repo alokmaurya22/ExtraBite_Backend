@@ -9,6 +9,10 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.extrabite.entity.User; // Make sure this is imported
 
 @Component
 public class JwtUtil {
@@ -19,26 +23,39 @@ public class JwtUtil {
     @Value("${jwt.expiration}")
     private long expiration;
 
-    // Method to decode the Base64-encoded secret and return signing key
+    // Decode and return signing key
     private SecretKey getSigningKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Generate a JWT token for a given user email
-    public String generateToken(String email) {
+    // Generate token with custom claims
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", user.getId());
+        claims.put("fullName", user.getFullName());
+        claims.put("email", user.getEmail());
+        claims.put("role", user.getRole().name());
+        claims.put("profileActive", user.getProfileActive());
+
+        return createToken(claims, user.getEmail());
+    }
+
+    // Build the JWT token
+    private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
-        Date expiryDate = new Date(now.getTime() + expiration);
+        Date expiry = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(email)
+                .setClaims(claims)
+                .setSubject(subject)
                 .setIssuedAt(now)
-                .setExpiration(expiryDate)
+                .setExpiration(expiry)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    // Extract email (subject) from the JWT token
+    // Extract email (subject)
     public String extractEmail(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
@@ -48,7 +65,7 @@ public class JwtUtil {
                 .getSubject();
     }
 
-    // Validate the token (signature and expiration)
+    // Validate the token
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
@@ -57,7 +74,6 @@ public class JwtUtil {
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            // log error if needed
             return false;
         }
     }
