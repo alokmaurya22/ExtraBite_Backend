@@ -1,5 +1,7 @@
 package com.extrabite.service;
 
+import com.extrabite.dto.LoginRequest;
+import com.extrabite.dto.LoginResponse;
 import com.extrabite.dto.RegisterRequest;
 import com.extrabite.dto.RegisterResponse;
 
@@ -9,4 +11,5 @@ import com.extrabite.dto.RegisterResponse;
 public interface AuthService {
 
     RegisterResponse registerNewUser(RegisterRequest request);
+    LoginResponse login(LoginRequest request);
 }

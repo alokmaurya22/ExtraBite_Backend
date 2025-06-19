@@ -2,6 +2,7 @@ package com.extrabite.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -31,11 +32,16 @@ public class User {
     // Contact number of the user
     private String contactNumber;
 
-    // Optional: can be city, pin code, area - useful for logistics or filtering
+    // Location can be pin code, city, etc.
     private String location;
 
-    // Role of the user - donor, receiver, etc.
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
+
+    // Time of registration, set automatically
+    private LocalDateTime registrationDate;
+
+    // By default, true; can be toggled false by user to deactivate account
+    private Boolean profileActive;
 }

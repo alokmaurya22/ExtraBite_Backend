@@ -1,5 +1,7 @@
 package com.extrabite.controller;
 
+import com.extrabite.dto.LoginRequest;
+import com.extrabite.dto.LoginResponse;
 import com.extrabite.dto.RegisterRequest;
 import com.extrabite.dto.RegisterResponse;
 import com.extrabite.service.AuthService;
@@ -24,6 +26,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         RegisterResponse response = authService.registerNewUser(request);
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 }

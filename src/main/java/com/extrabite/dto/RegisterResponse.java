@@ -3,6 +3,8 @@ package com.extrabite.dto;
 import com.extrabite.entity.Role;
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 /**
  * DTO to send response after successful registration.
  */
@@ -26,4 +28,8 @@ public class RegisterResponse {
     private Role role;
 
     private String message;
+
+    private LocalDateTime registrationDate;
+
+    private Boolean profileActive;
 }
