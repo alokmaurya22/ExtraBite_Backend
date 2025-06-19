@@ -2,37 +2,48 @@ package com.extrabite.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-/**
- * Spring Security Configuration.
- * Ensures only JWT-based authentication (no session cookies or form login).
- */
+import java.util.List;
+
 @Configuration
 public class SecurityConfig {
 
+    private final UserDetailsService userDetailsService;
+    private final PasswordEncoder passwordEncoder;
+
+    public SecurityConfig(UserDetailsService userDetailsService,
+                          PasswordEncoder passwordEncoder) {
+        this.userDetailsService = userDetailsService;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    // Provide authentication manager manually
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        return new ProviderManager(
+                List.of(new CustomAuthenticationProvider(userDetailsService, passwordEncoder))
+        );
+    }
+
+    // Define your security rules
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
         http
-                // Disable CSRF since we are using JWTs not sessions
-                .csrf(csrf -> csrf.disable())
-
-                // Disable Session Management and Form Login
-                .formLogin(form -> form.disable())
-                .logout(logout -> logout.disable())    // disable logout endpoint too
-                .httpBasic(httpBasic -> httpBasic.disable()) // disables default security dialog
-
-                // Allow public access to login and register
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register")
-                        .permitAll()
-                        .requestMatchers("/api/admin/**")
-                        .hasAuthority("SUPER_ADMIN")
-                        .anyRequest()
-                        .authenticated()
-                );
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/admin/**").hasAuthority("SUPER_ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
     }
