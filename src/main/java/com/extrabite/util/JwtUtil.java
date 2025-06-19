@@ -2,41 +2,63 @@ package com.extrabite.util;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class JwtUtil {
 
-    // Secret key used to sign the token (keep it long and private in production)
-    private final String jwtSecret = "extrabite-super-secure-key-for-jwt-backend";
+    @Value("${jwt.secret}")
+    private String secret;
 
-    // Expiry time in milliseconds (1 day = 24 * 60 * 60 * 1000)
-    private final long jwtExpirationMs = 24 * 60 * 60 * 1000L;
+    @Value("${jwt.expiration}")
+    private long expiration;
 
-    /**
-     * Generates JWT token with custom payload
-     * @param userId       the user's database ID
-     * @param email        the user's email
-     * @param role         the user's role string
-     * @param profileActive true/false
-     * @return signed JWT token
-     */
-    public String generateToken(Long userId, String email, String role, boolean profileActive) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("role", role);
-        claims.put("userId", userId);
-        claims.put("profileActive", profileActive);
+    // Method to decode the Base64-encoded secret and return signing key
+    private SecretKey getSigningKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        return Keys.hmacShaKeyFor(keyBytes);
+    }
+
+    // Generate a JWT token for a given user email
+    public String generateToken(String email) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(email)                          // Will be available as `sub`
-                .addClaims(claims)                          // Custom claims
-                .setIssuedAt(new Date())                    // iat
-                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs)) // exp
-                .signWith(SignatureAlgorithm.HS512, jwtSecret)
+                .setSubject(email)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    // Extract email (subject) from the JWT token
+    public String extractEmail(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    // Validate the token (signature and expiration)
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            // log error if needed
+            return false;
+        }
     }
 }

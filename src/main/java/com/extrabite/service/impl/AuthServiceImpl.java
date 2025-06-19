@@ -96,10 +96,7 @@ public class AuthServiceImpl implements AuthService {
 
         // If valid, generate JWT token
         String token = jwtUtil.generateToken(
-                user.getId(),
-                user.getEmail(),
-                user.getRole().name(),
-                user.getProfileActive()
+                user.getEmail()
         );
 
         System.out.println("Looking up email: " + request.getEmail());
