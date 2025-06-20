@@ -1,18 +1,19 @@
 package com.extrabite.util;
 
+import com.extrabite.entity.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.extrabite.entity.User; // Make sure this is imported
 
 @Component
 public class JwtUtil {
@@ -55,17 +56,37 @@ public class JwtUtil {
                 .compact();
     }
 
-    // Extract email (subject)
+    // ✅ Existing: Extract email (subject)
     public String extractEmail(String token) {
+        return extractAllClaims(token).getSubject();
+    }
+
+    // ✅ NEW: Used by JwtAuthFilter
+    public String extractUsername(String token) {
+        return extractEmail(token); // Alias
+    }
+
+    // ✅ NEW: Used by JwtAuthFilter
+    public boolean isTokenValid(String token, UserDetails userDetails) {
+        final String username = extractUsername(token);
+        return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
+    }
+
+    // ✅ Check if token expired
+    private boolean isTokenExpired(String token) {
+        return extractAllClaims(token).getExpiration().before(new Date());
+    }
+
+    // ✅ Extract all claims (internal use)
+    private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+                .getBody();
     }
 
-    // Validate the token
+    // ✅ Validate token format only (used externally)
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder()
