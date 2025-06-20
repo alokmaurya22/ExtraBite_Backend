@@ -1,5 +1,6 @@
 package com.extrabite.config;
 
+import com.extrabite.repository.BlacklistTokenRepository;
 import com.extrabite.util.JwtUtil;
 import com.extrabite.service.impl.CustomUserDetailsService;
 import org.springframework.context.annotation.Bean;
@@ -21,13 +22,16 @@ public class SecurityConfig {
     private final UserDetailsService userDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final BlacklistTokenRepository blacklistTokenRepository;
 
     public SecurityConfig(UserDetailsService userDetailsService,
                           PasswordEncoder passwordEncoder,
-                          JwtUtil jwtUtil) {
+                          JwtUtil jwtUtil,
+                          BlacklistTokenRepository blacklistTokenRepository) {
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.blacklistTokenRepository = blacklistTokenRepository;
     }
 
     @Bean
@@ -39,7 +43,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtAuthFilter jwtAuthFilter() {
-        return new JwtAuthFilter(jwtUtil, userDetailsService);
+        return new JwtAuthFilter(jwtUtil, userDetailsService, blacklistTokenRepository);
     }
 
     @Bean
@@ -47,7 +51,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password", "/api/auth/logout").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
                         .requestMatchers("/api/user/**").authenticated()
                         .anyRequest().authenticated()
