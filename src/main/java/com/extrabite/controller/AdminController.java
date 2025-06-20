@@ -17,6 +17,4 @@ public class AdminController {
     public ResponseEntity<?> adminPath(Authentication authentication) {
         return ResponseEntity.ok("Hello, Super Admin: " + authentication.getName());
     }
-
-    // You can extend more admin-specific logic below
 }
