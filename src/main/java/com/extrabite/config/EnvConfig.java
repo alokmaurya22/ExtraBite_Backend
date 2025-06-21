@@ -21,12 +21,20 @@ public class EnvConfig {
     @Bean
     public Environment environment(Dotenv dotenv) {
         StandardEnvironment environment = new StandardEnvironment();
-        System.setProperty("DB_URL", dotenv.get("DB_URL"));
-        System.setProperty("DB_USERNAME", dotenv.get("DB_USERNAME"));
-        System.setProperty("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
-        System.setProperty("GOOGLE_CLIENT_ID", dotenv.get("GOOGLE_CLIENT_ID"));
-        System.setProperty("GOOGLE_CLIENT_SECRET", dotenv.get("GOOGLE_CLIENT_SECRET"));
-        System.setProperty("SERVER_PORT", dotenv.get("SERVER_PORT"));
+
+        safeSet("DB_URL", dotenv.get("DB_URL"));
+        safeSet("DB_USERNAME", dotenv.get("DB_USERNAME"));
+        safeSet("DB_PASSWORD", dotenv.get("DB_PASSWORD"));
+        safeSet("GOOGLE_CLIENT_ID", dotenv.get("GOOGLE_CLIENT_ID"));
+        safeSet("GOOGLE_CLIENT_SECRET", dotenv.get("GOOGLE_CLIENT_SECRET"));
+        safeSet("SERVER_PORT", dotenv.get("SERVER_PORT"));
+
         return environment;
+    }
+
+    private void safeSet(String key, String value) {
+        if (value != null) {
+            System.setProperty(key, value);
+        }
     }
 }
